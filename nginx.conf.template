@@ -1,0 +1,23 @@
+log_format proxy_debug '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      'to:$proxy_host uri:$request_uri '
+                      '"$http_user_agent"';
+
+access_log /var/log/nginx/access.log proxy_debug;
+error_log /var/log/nginx/error.log debug;
+
+server {
+    listen       80;
+    server_name  localhost;
+
+    root /usr/share/nginx/html;
+
+    location /api/ {
+        proxy_pass $API_PROXY_URL/;
+        rewrite ^/api/(.*)$ /$1 break;
+    }
+
+    location / {
+        try_files $uri /index.html;
+    }
+}
