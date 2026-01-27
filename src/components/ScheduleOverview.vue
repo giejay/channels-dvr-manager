@@ -186,11 +186,6 @@ function formatChannels(row) {
 </script>
 
 <style scoped>
-.schedule-container {
-  padding: 16px;
-  max-width: 1200px;
-  margin: 0 auto;
-}
 :deep(.el-table),
 :deep(.el-table__header),
 :deep(.el-table__body),
