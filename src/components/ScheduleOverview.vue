@@ -1,15 +1,8 @@
 <template>
   <section class="schedule-container">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <ElInput v-model="filter" placeholder="Filter by title or channel" style="width:300px" />
+      <div style="flex:1;"></div>
       <div style="display:flex;gap:12px;align-items:center;">
-        <ElButton v-if="selectedJobs.length" style="margin-right:8px" type="danger">
-          <ElPopconfirm title="Delete all selected recordings?" @confirm="deleteSelectedJobs">
-            <template #reference>
-              <span>Delete Selected ({{ selectedJobs.length }})</span>
-            </template>
-          </ElPopconfirm>
-        </ElButton>
         <ElButton @click="toggleDarkMode" :type="isDark ? 'info' : 'default'">
           <span v-if="isDark">🌙 Dark</span>
           <span v-else>☀️ Light</span>
@@ -17,33 +10,55 @@
         <ElButton type="primary" @click="showManualDialog = true">Create Manual Recording</ElButton>
       </div>
     </div>
-    <ElTable
-      :data="filteredJobs"
-      style="width:100%; min-width:800px;"
-      border
-      stripe
-      @selection-change="onSelectionChange"
-      ref="tableRef"
-    >
-      <ElTableColumn type="selection" width="55" />
-      <ElTableColumn prop="Name" label="Title" sortable />
-      <ElTableColumn prop="Channels" label="Channels" :formatter="formatChannels" />
-      <ElTableColumn prop="Time" label="Start" :formatter="row => formatDate(row.Time)" sortable />
-      <ElTableColumn prop="Duration" label="Duration" :formatter="row => formatDuration(row.Duration)" sortable />
-      <ElTableColumn label="Actions">
-        <template #default="scope">
-          <ElPopconfirm title="Delete this recording?" @confirm="deleteJob(scope.row.ID)">
-            <template #reference>
-              <ElButton type="danger" size="small">Delete</ElButton>
+
+    <ElTabs v-model="activeTab">
+      <!-- Schedule Tab -->
+      <ElTabPane label="Scheduled Recordings" name="schedule">
+        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;margin-top:16px;">
+          <ElInput v-model="filter" placeholder="Filter by title or channel" style="width:300px" />
+          <ElButton v-if="selectedJobs.length" style="margin-right:8px" type="danger">
+            <ElPopconfirm title="Delete all selected recordings?" @confirm="deleteSelectedJobs">
+              <template #reference>
+                <span>Delete Selected ({{ selectedJobs.length }})</span>
+              </template>
+            </ElPopconfirm>
+          </ElButton>
+        </div>
+        <ElTable
+          :data="filteredJobs"
+          style="width:100%; min-width:800px;"
+          border
+          stripe
+          @selection-change="onSelectionChange"
+          ref="tableRef"
+        >
+          <ElTableColumn type="selection" width="55" />
+          <ElTableColumn prop="Name" label="Title" sortable />
+          <ElTableColumn prop="Channels" label="Channels" :formatter="formatChannels" />
+          <ElTableColumn prop="Time" label="Start" :formatter="row => formatDate(row.Time)" sortable />
+          <ElTableColumn prop="Duration" label="Duration" :formatter="row => formatDuration(row.Duration)" sortable />
+          <ElTableColumn label="Actions">
+            <template #default="scope">
+              <ElPopconfirm title="Delete this recording?" @confirm="deleteJob(scope.row.ID)">
+                <template #reference>
+                  <ElButton type="danger" size="small">Delete</ElButton>
+                </template>
+              </ElPopconfirm>
+              <ElButton type="primary" size="small" style="margin-left:8px">Edit</ElButton>
             </template>
-          </ElPopconfirm>
-          <ElButton type="primary" size="small" style="margin-left:8px">Edit</ElButton>
-        </template>
-      </ElTableColumn>
-    </ElTable>
-    <div v-if="loading">Loading...</div>
-    <div v-if="error" style="color:red">{{ error }}</div>
-    <div v-if="!loading && !filteredJobs.length">No scheduled recordings.</div>
+          </ElTableColumn>
+        </ElTable>
+        <div v-if="loading">Loading...</div>
+        <div v-if="error" style="color:red">{{ error }}</div>
+        <div v-if="!loading && !filteredJobs.length">No scheduled recordings.</div>
+      </ElTabPane>
+
+      <!-- Search Tab -->
+      <ElTabPane label="Search Guide" name="search">
+        <GuideSearch @recording-created="onManualSaved" />
+      </ElTabPane>
+    </ElTabs>
+
     <ElDialog v-model="showManualDialog" title="Create Manual Recording" width="600px" @close="resetManualForm">
       <ManualRecording :visible="showManualDialog" @recording-created="onManualSaved" />
     </ElDialog>
@@ -53,7 +68,8 @@
 <script setup>
 import { ref, onMounted, defineExpose, computed } from 'vue'
 import ManualRecording from './ManualRecording.vue'
-import { ElTable, ElTableColumn, ElInput, ElButton, ElPopconfirm, ElMessage, ElDialog } from 'element-plus'
+import GuideSearch from './GuideSearch.vue'
+import { ElTable, ElTableColumn, ElInput, ElButton, ElPopconfirm, ElMessage, ElDialog, ElTabs, ElTabPane } from 'element-plus'
 
 const jobs = ref([])
 const channels = ref([])
@@ -63,6 +79,7 @@ const filter = ref('')
 const showManualDialog = ref(false)
 const isDark = ref(false)
 const selectedJobs = ref([])
+const activeTab = ref('schedule')
 
 function formatDate(epoch) {
   const d = new Date(epoch * 1000)
