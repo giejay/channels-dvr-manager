@@ -335,7 +335,7 @@ function formatDuration(seconds) {
 function viewStream(program) {
   selectedProgram.value = program
   // Build stream URL from environment variable or default
-  const baseUrl = import.meta.env.VITE_STREAM_URL || 'http://www.channels.local'
+  const baseUrl = import.meta.env.VITE_STREAM_URL || `http://${window.location.hostname}`;
   streamUrl.value = `${baseUrl}/devices/ANY/channels/${program.Channel}/stream.mpg`
   showStreamDialog.value = true
 }

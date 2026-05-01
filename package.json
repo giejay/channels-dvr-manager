@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:with-stream-url": "VITE_STREAM_URL=$VITE_STREAM_URL vite build",
     "preview": "vite preview"
   },
   "dependencies": {
