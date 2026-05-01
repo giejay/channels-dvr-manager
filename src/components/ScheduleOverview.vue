@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="header">
       <div class="header-left">
-        <ElInput
-          v-model="filter"
-          placeholder="Filter..."
-          clearable
-          class="filter-input"
-        />
+<!--        <ElInput-->
+<!--          v-model="filter"-->
+<!--          placeholder="Filter..."-->
+<!--          clearable-->
+<!--          class="filter-input"-->
+<!--        />-->
       </div>
        <div class="header-right">
          <ElButton @click="toggleDarkMode" :type="isDark ? 'info' : 'default'" icon="Sun">
