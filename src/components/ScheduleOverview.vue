@@ -1,65 +1,115 @@
 <template>
   <section class="schedule-container">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <div style="flex:1;"></div>
-      <div style="display:flex;gap:12px;align-items:center;">
-        <ElButton @click="toggleDarkMode" :type="isDark ? 'info' : 'default'">
-          <span v-if="isDark">🌙 Dark</span>
-          <span v-else>☀️ Light</span>
-        </ElButton>
-        <ElButton type="primary" @click="showManualDialog = true">Create Manual Recording</ElButton>
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <ElInput
+          v-model="filter"
+          placeholder="Filter..."
+          clearable
+          class="filter-input"
+        />
       </div>
+       <div class="header-right">
+         <ElButton @click="toggleDarkMode" :type="isDark ? 'info' : 'default'" icon="Sun">
+           {{ isDark ? '🌙 Dark' : '☀️ Light' }}
+         </ElButton>
+         <ElButton type="primary" class="create-recording-btn" @click="showManualDialog = true">
+           Create manual recording
+         </ElButton>
+       </div>
     </div>
 
-    <ElTabs v-model="activeTab">
+    <ElTabs v-model="activeTab" class="tabs-responsive">
       <!-- Schedule Tab -->
       <ElTabPane label="Scheduled Recordings" name="schedule">
-        <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px;margin-top:16px;">
-          <ElInput v-model="filter" placeholder="Filter by title or channel" style="width:300px" />
-          <ElButton v-if="selectedJobs.length" style="margin-right:8px" type="danger">
+        <div class="tab-content">
+          <div v-if="selectedJobs.length" class="delete-selected-bar">
             <ElPopconfirm title="Delete all selected recordings?" @confirm="deleteSelectedJobs">
               <template #reference>
-                <span>Delete Selected ({{ selectedJobs.length }})</span>
+                <ElButton type="danger">
+                  Delete Selected ({{ selectedJobs.length }})
+                </ElButton>
               </template>
             </ElPopconfirm>
-          </ElButton>
-        </div>
-        <ElTable
-          :data="filteredJobs"
-          style="width:100%; min-width:800px;"
-          border
-          stripe
-          @selection-change="onSelectionChange"
-          ref="tableRef"
-        >
-          <ElTableColumn type="selection" width="55" />
-          <ElTableColumn prop="Name" label="Title" sortable />
-          <ElTableColumn prop="Channels" label="Channels" :formatter="formatChannels" />
-          <ElTableColumn prop="Time" label="Start" :formatter="row => formatDate(row.Time)" sortable />
-          <ElTableColumn prop="Duration" label="Duration" :formatter="row => formatDuration(row.Duration)" sortable />
-          <ElTableColumn label="Actions">
-            <template #default="scope">
-              <ElPopconfirm title="Delete this recording?" @confirm="deleteJob(scope.row.ID)">
-                <template #reference>
-                  <ElButton type="danger" size="small">Delete</ElButton>
+          </div>
+
+          <!-- Desktop Table View -->
+          <div class="table-wrapper desktop-view">
+            <ElTable
+              :data="filteredJobs"
+              border
+              stripe
+              @selection-change="onSelectionChange"
+              ref="tableRef"
+            >
+              <ElTableColumn type="selection" width="50" />
+              <ElTableColumn prop="Name" label="Title" sortable min-width="150" />
+              <ElTableColumn prop="Channels" label="Channels" :formatter="formatChannels" min-width="120" />
+              <ElTableColumn prop="Time" label="Start" :formatter="row => formatDate(row.Time)" sortable min-width="160" />
+              <ElTableColumn prop="Duration" label="Duration" :formatter="row => formatDuration(row.Duration)" sortable min-width="100" />
+              <ElTableColumn label="Actions" width="140" fixed="right">
+                <template #default="scope">
+                  <ElPopconfirm title="Delete?" @confirm="deleteJob(scope.row.ID)">
+                    <template #reference>
+                      <ElButton type="danger" size="small" link>Delete</ElButton>
+                    </template>
+                  </ElPopconfirm>
                 </template>
-              </ElPopconfirm>
-              <ElButton type="primary" size="small" style="margin-left:8px">Edit</ElButton>
-            </template>
-          </ElTableColumn>
-        </ElTable>
-        <div v-if="loading">Loading...</div>
-        <div v-if="error" style="color:red">{{ error }}</div>
-        <div v-if="!loading && !filteredJobs.length">No scheduled recordings.</div>
+              </ElTableColumn>
+            </ElTable>
+          </div>
+
+          <!-- Mobile Card View -->
+          <div class="mobile-view">
+            <div v-if="filteredJobs.length" class="card-list">
+              <div v-for="job in filteredJobs" :key="job.ID" class="recording-card">
+                <div class="card-header">
+                  <h3 class="card-title">{{ job.Name }}</h3>
+                  <ElPopconfirm title="Delete?" @confirm="deleteJob(job.ID)">
+                    <template #reference>
+                      <ElButton type="danger" size="small" link>Delete</ElButton>
+                    </template>
+                  </ElPopconfirm>
+                </div>
+                <div class="card-body">
+                  <div class="card-row">
+                    <span class="card-label">Channels:</span>
+                    <span class="card-value">{{ formatChannels(job) }}</span>
+                  </div>
+                  <div class="card-row">
+                    <span class="card-label">Start:</span>
+                    <span class="card-value">{{ formatDate(job.Time) }}</span>
+                  </div>
+                  <div class="card-row">
+                    <span class="card-label">Duration:</span>
+                    <span class="card-value">{{ formatDuration(job.Duration) }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="!loading && !error" class="empty-state">
+              No recordings found
+            </div>
+          </div>
+
+          <div v-if="loading" class="loading-state">Loading...</div>
+          <div v-if="error" class="error-state">{{ error }}</div>
+        </div>
       </ElTabPane>
 
       <!-- Search Tab -->
-      <ElTabPane label="Search Guide" name="search">
-        <GuideSearch @recording-created="onManualSaved" />
+      <ElTabPane label="Guide" name="guide">
+        <Guide />
       </ElTabPane>
     </ElTabs>
 
-    <ElDialog v-model="showManualDialog" title="Create Manual Recording" width="600px" @close="resetManualForm">
+    <ElDialog
+      v-model="showManualDialog"
+      title="Create Manual Recording"
+      class="manual-dialog"
+      @close="resetManualForm"
+    >
       <ManualRecording :visible="showManualDialog" @recording-created="onManualSaved" />
     </ElDialog>
   </section>
@@ -68,7 +118,7 @@
 <script setup>
 import { ref, onMounted, defineExpose, computed } from 'vue'
 import ManualRecording from './ManualRecording.vue'
-import GuideSearch from './GuideSearch.vue'
+import Guide from './Guide.vue'
 import { ElTable, ElTableColumn, ElInput, ElButton, ElPopconfirm, ElMessage, ElDialog, ElTabs, ElTabPane } from 'element-plus'
 
 const jobs = ref([])
@@ -203,7 +253,95 @@ function formatChannels(row) {
 </script>
 
 <style scoped>
-:deep(.el-table),
+.schedule-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Header Layout */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.header-right {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.filter-input {
+  width: 100%;
+}
+
+:deep(.header-right .el-button) {
+  color: var(--color-text) !important;
+}
+
+
+/* Desktop View */
+@media (min-width: 768px) {
+  .header {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .header-left {
+    flex: 1;
+  }
+
+  .header-right {
+    flex-wrap: nowrap;
+  }
+
+  .filter-input {
+    width: 300px;
+  }
+
+
+  .desktop-view {
+    display: block;
+  }
+
+  .mobile-view {
+    display: none;
+  }
+}
+
+/* Mobile Only */
+@media (max-width: 767px) {
+  .desktop-view {
+    display: none;
+  }
+
+  .mobile-view {
+    display: block;
+  }
+
+  .header-right :deep(.el-button) {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* Table Wrapper */
+.table-wrapper {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+:deep(.el-table) {
+  background: var(--color-background) !important;
+  color: var(--color-text) !important;
+}
+
 :deep(.el-table__header),
 :deep(.el-table__body),
 :deep(.el-table__cell),
@@ -212,20 +350,202 @@ function formatChannels(row) {
   background: var(--color-background) !important;
   color: var(--color-text) !important;
 }
+
 :deep(.el-table__row:hover) {
   background: var(--color-background-soft) !important;
 }
+
 :deep(.el-table__header th) {
   font-weight: bold;
   background: var(--color-background-mute) !important;
 }
-:deep(.el-dialog) {
-  background: var(--color-background, #222) !important;
-  color: var(--color-text) !important;
-  border-radius: 10px;
-  box-shadow: 0 2px 16px 0 rgba(0,0,0,0.12);
+
+/* Mobile Card View */
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
-:deep(.el-dialog__title){
+
+.recording-card {
+  background: var(--color-background-mute);
+  border: 1px solid var(--color-background-soft);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-background-soft);
+  padding-bottom: 0.5rem;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  flex: 1;
+  word-break: break-word;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.card-label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary, #999);
+}
+
+.card-value {
+  font-size: 0.95rem;
+  color: var(--color-text);
+  word-break: break-word;
+}
+
+/* States */
+.delete-selected-bar {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--color-background-soft);
+  border-radius: 0.25rem;
+}
+
+.loading-state,
+.empty-state,
+.error-state {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-text);
+}
+
+.error-state {
+  color: #f56c6c;
+}
+
+/* Tabs */
+:deep(.el-tabs) {
+  --el-component-border-color: var(--color-background-soft);
+}
+
+:deep(.el-tabs__header) {
+  background: var(--color-background);
+  border-bottom: 1px solid var(--color-background-soft);
+}
+
+:deep(.el-tabs__nav-wrap) {
+  background: var(--color-background);
+}
+
+:deep(.el-tabs__content) {
+  color: var(--color-text);
+}
+
+:deep(.el-tabs__item) {
   color: var(--color-text) !important;
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: #409eff !important;
+}
+
+:deep(.el-tabs__item:hover) {
+  color: var(--color-text) !important;
+}
+
+:deep(.el-tabs__item.is-top:hover) {
+  color: var(--color-text) !important;
+}
+
+/* Dialog */
+:deep(.el-dialog) {
+  --el-dialog-bg-color: var(--color-background);
+  background: var(--color-background) !important;
+}
+
+:deep(.el-dialog__header) {
+  background: var(--color-background) !important;
+  border-bottom: 1px solid var(--color-background-soft);
+}
+
+:deep(.el-dialog__title) {
+  color: var(--color-text) !important;
+}
+
+:deep(.el-dialog__close) {
+  color: var(--color-text) !important;
+}
+
+:deep(.el-dialog__body) {
+  background: var(--color-background) !important;
+  color: var(--color-text) !important;
+}
+
+:deep(.el-dialog__footer) {
+  background: var(--color-background) !important;
+  border-top: 1px solid var(--color-background-soft);
+}
+
+:deep(.el-button) {
+  font-size: 0.95rem;
+}
+
+:deep(.schedule-container .el-button) {
+  color: inherit !important;
+}
+
+:deep(.schedule-container .el-button span) {
+  color: inherit !important;
+}
+
+:deep(.schedule-container .el-button--primary) {
+  color: white !important;
+}
+
+:deep(.schedule-container .el-button--primary span) {
+  color: white !important;
+}
+
+/* Ensure Create Recording button always has white text */
+:deep(.create-recording-btn) {
+  color: white !important;
+}
+
+:deep(.create-recording-btn span) {
+  color: white !important;
+}
+
+/* Responsive dialog width */
+@media (max-width: 600px) {
+  :deep(.el-dialog) {
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 1rem !important;
+  }
+}
+
+@media (min-width: 601px) {
+  :deep(.el-dialog.manual-dialog) {
+    width: 600px !important;
+  }
 }
 </style>

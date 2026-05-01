@@ -3,8 +3,9 @@
 #app {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0.625rem;
   font-weight: normal;
+  min-height: 100vh;
 }
 
 a,
@@ -18,5 +19,18 @@ a,
 @media (hover: hover) {
   a:hover {
     background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+/* Mobile-first responsive design */
+@media (min-width: 640px) {
+  #app {
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  #app {
+    padding: 2rem;
   }
 }

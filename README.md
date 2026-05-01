@@ -2,6 +2,16 @@
 
 channels-dvr-manager is a web-based management UI for Channels DVR servers. It provides features missing from the default Channels DVR web interface, such as creating manual recordings, advanced schedule management, and bulk operations.
 
+## ⚠️ Disclaimer
+
+**This codebase has been heavily developed with AI assistance.** While care has been taken to ensure functionality and quality, please be aware that:
+- Code may contain inefficiencies or unconventional patterns
+- Testing may be incomplete
+- Documentation may not be exhaustive
+- There may be edge cases not covered
+
+Use at your own risk and feel free to review, refactor, or improve the code as needed.
+
 ## Features
 
 - Create manual recordings with custom start/end times, multiple channels, and repeat options

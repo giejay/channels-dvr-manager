@@ -1,64 +1,81 @@
 <template>
-  <section>
+  <section class="manual-recording-section">
     <form @submit.prevent="submitRecording" class="manual-form">
+      <!-- Title -->
       <div class="form-row">
-        <label for="title">Title:</label>
+        <label for="title">Title</label>
         <input id="title" v-model="title" required />
       </div>
+
+      <!-- Start Date & Time -->
       <div class="form-row">
-        <label for="start">Start Date & Time:</label>
+        <label for="start">Start Date & Time</label>
         <input id="start" type="datetime-local" v-model="start" required />
       </div>
+
+      <!-- End Date & Time -->
       <div class="form-row">
-        <label for="end">End Date & Time:</label>
+        <label for="end">End Date & Time</label>
         <input id="end" type="datetime-local" v-model="end" required />
       </div>
+
+      <!-- Max Duration -->
       <div class="form-row">
-        <label for="maxDuration">Max Duration:</label>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input id="maxDurationH" type="number" v-model.number="maxDurationH" min="0" max="23" style="width:60px" placeholder="hh" />
+        <label for="maxDurationH">Max Duration (split recordings)</label>
+        <div class="duration-group">
+          <input id="maxDurationH" type="number" v-model.number="maxDurationH" min="0" max="23" placeholder="00" />
           <span>:</span>
-          <input id="maxDurationM" type="number" v-model.number="maxDurationM" min="0" max="59" style="width:60px" placeholder="mm" />
-          <span style="font-size:0.95em;color:var(--color-text-secondary,#aaa)">(00:00 = no split)</span>
+          <input id="maxDurationM" type="number" v-model.number="maxDurationM" min="0" max="59" placeholder="00" />
+          <span>(leave as 00:00 for no split)</span>
         </div>
       </div>
+
+      <!-- Repeat Days -->
       <div class="form-row">
-        <label for="repeatDays">Repeat (days):</label>
-        <input id="repeatDays" type="number" v-model.number="repeatDays" min="1" max="365" style="width:80px" />
+        <label for="repeatDays">Repeat (days)</label>
+        <input id="repeatDays" type="number" v-model.number="repeatDays" min="1" max="365" />
       </div>
+
+      <!-- Channels -->
       <div class="form-row">
-        <label>Channels:</label>
-        <div style="flex:1; position:relative">
-          <input v-model="channelSearch" placeholder="Search channel..." />
+        <label>Select Channels</label>
+        <div class="channel-search-wrapper">
+          <input v-model="channelSearch" placeholder="Search channels..." />
           <ul v-if="filteredChannels.length" class="channel-list">
             <li v-for="ch in filteredChannels" :key="ch.ID">
-              <label style="display:flex;align-items:center;cursor:pointer;">
-                <input type="checkbox" :value="ch" style="margin-right: 5px" v-model="selectedChannels" @change="onChannelSelect(ch)" />
-                <img :src="ch.Logo" :alt="ch.GuideName" width="32" height="32" />
-                {{ ch.GuideNumber }} - {{ ch.GuideName }}
+              <label style="display:flex;align-items:center;cursor:pointer;width:100%;gap:0.5rem;margin:0;font-weight:normal;">
+                <input type="checkbox" :value="ch" v-model="selectedChannels" @change="onChannelSelect(ch)" />
+                <img :src="ch.Logo" :alt="ch.GuideName" />
+                <span>{{ ch.GuideNumber }} - {{ ch.GuideName }}</span>
               </label>
             </li>
           </ul>
         </div>
       </div>
+
+      <!-- Selected Channels Display -->
       <div v-if="selectedChannels.length" class="form-row">
         <label></label>
-        <div>
-          <strong>Selected:</strong>
-          <div v-for="ch in selectedChannels" :key="ch.ID" style="margin-bottom:4px;">
-            {{ ch.GuideNumber }} - {{ ch.GuideName }}
-            <button type="button" @click="removeChannel(ch)" style="margin-left:2px;">&times;</button>
+        <div class="selected-channels">
+          <div class="selected-channels-label">{{ selectedChannels.length }} channel(s) selected</div>
+          <div v-for="ch in selectedChannels" :key="ch.ID" class="selected-channel-item">
+            <span>{{ ch.GuideNumber }} - {{ ch.GuideName }}</span>
+            <button type="button" @click="removeChannel(ch)">×</button>
           </div>
         </div>
       </div>
+
+      <!-- Summary -->
       <div class="form-row">
-        <label>Summary:</label>
-        <input v-model="summary" />
+        <label for="summary">Summary</label>
+        <input id="summary" v-model="summary" />
       </div>
-      <div v-if="(splitCount > 1 || repeatDays > 1) && selectedChannels.length >=  1 && segmentSummariesDisplay.length" class="form-row">
+
+      <!-- Recording Summary -->
+      <div v-if="(splitCount > 1 || repeatDays > 1) && selectedChannels.length >= 1 && segmentSummariesDisplay.length" class="form-row">
         <label></label>
         <div class="form-hint">
-          <div>Will create {{ segmentSummaries.length * selectedChannels.length }} recordings:</div>
+          <div>Will create {{ segmentSummaries.length * selectedChannels.length }} recording(s):</div>
           <ul>
             <li v-for="(seg, idx) in segmentSummariesDisplay" :key="idx">
               {{ seg }}
@@ -66,33 +83,43 @@
           </ul>
         </div>
       </div>
+
+      <!-- Image Search -->
       <div class="form-row">
-        <label>Image:</label>
-        <div style="flex:1">
-          <input v-model="imageSearch" @input="searchImages" placeholder="Search image..." />
+        <label for="imageSearch">Search Image</label>
+        <div class="image-search-wrapper">
+          <input id="imageSearch" v-model="imageSearch" @input="searchImages" placeholder="Search for an image..." />
           <ul v-if="imageResults.length" class="image-list">
             <li v-for="(img, idx) in imageResults" :key="idx" @click="selectImage(img)">
-              <img :src="img" :alt="`Image result ${idx+1}`" width="50" height="50" />
+              <img :src="img" :alt="`Result ${idx+1}`" />
             </li>
           </ul>
         </div>
       </div>
+
+      <!-- Selected Image Display -->
       <div v-if="selectedImage" class="form-row">
         <label></label>
-        <div><img :src="selectedImage" :alt="'Selected image'" width="100" /></div>
+        <div class="selected-image-container">
+          <img :src="selectedImage" :alt="'Selected'" />
+        </div>
       </div>
+
+      <!-- Submit Button -->
       <div class="form-row">
         <label></label>
         <button type="submit">Create Recording</button>
       </div>
+
+      <!-- Messages -->
       <div v-if="error" style="color:red">{{ error }}</div>
-      <div v-if="success" style="color:green">Recording created!</div>
+      <div v-if="success" style="color:green">Recording created successfully!</div>
     </form>
   </section>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, defineEmits, watch } from 'vue'
+import { ref, computed, onMounted, defineEmits, watch, defineProps } from 'vue'
 
 const emit = defineEmits()
 // Add a prop for dialog visibility
@@ -332,108 +359,353 @@ async function submitRecording() {
 </script>
 
 <style scoped>
+.manual-recording-section {
+  width: 100%;
+}
+
 .manual-form {
   display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 12px 16px;
-  max-width: 500px;
-  margin: 0 auto;
+  gap: 1.5rem;
   background: var(--color-background, #fff);
   color: var(--color-text, #222);
-  padding: 24px 18px;
 }
+
+/* Mobile: single column layout */
 .form-row {
-  display: contents;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
+
 label {
-  text-align: right;
-  align-self: center;
-  font-weight: 500;
-  padding-right: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
   color: var(--color-text, #222);
 }
+
 input[type="text"],
 input[type="number"],
 input[type="datetime-local"] {
   width: 100%;
   box-sizing: border-box;
-  padding: 6px 8px;
-  border-radius: 4px;
-  border: 1px solid var(--color-border, #4442);
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-background-soft, #ddd);
   background: var(--color-background-mute, #f5f5f5);
   color: var(--color-text, #222);
+  font-size: 1rem;
 }
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="datetime-local"]:focus {
+  outline: none;
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
 button[type="submit"] {
-  padding: 8px 18px;
-  border-radius: 4px;
-  background: var(--color-background-mute, #f5f5f5);
-  color: var(--color-text, #222);
-  border: 1px solid var(--color-border, #bbb);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.375rem;
+  background: #409eff;
+  color: white !important;
+  border: none;
   cursor: pointer;
   font-weight: 600;
+  font-size: 1rem;
   transition: background 0.2s;
 }
+
 button[type="submit"]:hover {
-  background: var(--color-background-soft, #e0e0e0);
+  background: #66b1ff;
 }
+
+button[type="submit"]:active {
+  background: #3375dd;
+}
+
+/* Duration input group */
+.duration-group {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.duration-group input {
+  width: 80px;
+  text-align: center;
+}
+
+.duration-group span {
+  color: var(--color-text-secondary, #aaa);
+  font-size: 0.9rem;
+}
+
+/* Channel search and selection */
+.channel-search-wrapper {
+  position: relative;
+}
+
 .channel-list {
   list-style: none;
   padding: 0;
   margin: 0;
   background: var(--color-background-mute, #232323);
-  border: 1px solid var(--color-border, #4442);
-  max-height: 180px;
+  border: 1px solid var(--color-background-soft, #ddd);
+  max-height: 240px;
   overflow-y: auto;
   position: absolute;
   z-index: 10;
-  width: 320px;
+  width: 100%;
   color: var(--color-text, #fff);
+  border-radius: 0.375rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  top: 100%;
+  margin-top: 0.25rem;
 }
+
 .channel-list li {
   cursor: pointer;
-  margin-bottom: 4px;
+  padding: 0.75rem;
   display: flex;
   align-items: center;
-  padding: 4px 8px;
+  gap: 0.75rem;
   background: transparent;
   color: var(--color-text, #fff);
+  border-bottom: 1px solid var(--color-background-soft, #ddd);
+  transition: background 0.15s;
 }
+
+.channel-list li:last-child {
+  border-bottom: none;
+}
+
 .channel-list li:hover {
   background: var(--color-background-soft, #333);
 }
-img {
-  margin-right: 8px;
+
+.channel-list img {
+  width: 32px;
+  height: 32px;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
 }
-.form-hint {
-  color: var(--color-text-secondary, #aaa);
-  font-size: 0.95em;
+
+/* Selected channels display */
+.selected-channels {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--color-background-mute);
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-background-soft);
 }
+
+.selected-channels-label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+.selected-channel-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: var(--color-background-soft);
+  border-radius: 0.25rem;
+  font-size: 0.95rem;
+}
+
+.selected-channel-item button {
+  background: none;
+  border: none;
+  color: #f56c6c;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.selected-channel-item button:hover {
+  color: #dd001b;
+}
+
+/* Image search and results */
+.image-search-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+}
+
 .image-list {
+  list-style: none;
+  padding: 0.5rem;
+  margin: 0;
+  background: var(--color-background-mute, #232323);
+  border: 1px solid var(--color-background-soft, #ddd);
+  max-height: 200px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 0.5rem;
+  border-radius: 0.375rem;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.image-list li {
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 0.25rem;
+  transition: transform 0.15s;
+}
+
+.image-list li:hover {
+  transform: scale(1.05);
+}
+
+.image-list img {
+  width: 100%;
+  height: 60px;
+  object-fit: cover;
+}
+
+.selected-image-container {
+  padding: 0.75rem;
+  background: var(--color-background-mute);
+  border-radius: 0.375rem;
+  text-align: center;
+}
+
+.selected-image-container img {
+  max-width: 150px;
+  height: auto;
+  border-radius: 0.375rem;
+}
+
+/* Form hint/summary */
+.form-hint {
+  padding: 1rem;
+  background: var(--color-background-mute);
+  border-left: 3px solid #409eff;
+  border-radius: 0.375rem;
+  color: var(--color-text);
+  font-size: 0.95rem;
+}
+
+.form-hint div {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.form-hint ul {
   list-style: none;
   padding: 0;
   margin: 0;
-  background: var(--color-background-mute, #232323);
-  border: 1px solid var(--color-border, #4442);
-  max-height: 180px;
-  overflow-y: auto;
-  position: absolute;
-  z-index: 10;
-  width: 320px;
-  color: var(--color-text, #fff);
-}
-.image-list li {
-  cursor: pointer;
-  margin-bottom: 4px;
   display: flex;
-  align-items: center;
-  padding: 4px 8px;
-  background: transparent;
-  color: var(--color-text, #fff);
+  flex-direction: column;
+  gap: 0.25rem;
 }
-.image-list li:hover {
-  background: var(--color-background-soft, #333);
+
+.form-hint li {
+  padding: 0.25rem 0;
+  color: var(--color-text-secondary, #aaa);
+  font-size: 0.9rem;
+  word-break: break-word;
 }
+
+/* Error and success messages */
+[style*="color:red"] {
+  color: #f56c6c !important;
+  padding: 0.75rem;
+  background: rgba(245, 108, 108, 0.1);
+  border-radius: 0.375rem;
+  border-left: 3px solid #f56c6c;
+}
+
+[style*="color:green"] {
+  color: #67c23a !important;
+  padding: 0.75rem;
+  background: rgba(103, 194, 58, 0.1);
+  border-radius: 0.375rem;
+  border-left: 3px solid #67c23a;
+}
+
+/* Dialog Styling */
 :deep(.el-dialog) {
-  --el-dialog-bg-color: var(--color-background, #222);
+  --el-dialog-bg-color: var(--color-background);
+  background: var(--color-background) !important;
+}
+
+:deep(.el-dialog__header) {
+  background: var(--color-background) !important;
+  border-bottom: 1px solid var(--color-background-soft);
+}
+
+:deep(.el-dialog__title) {
+  color: var(--color-text) !important;
+}
+
+:deep(.el-dialog__close) {
+  color: var(--color-text) !important;
+}
+
+:deep(.el-dialog__body) {
+  background: var(--color-background) !important;
+  color: var(--color-text) !important;
+}
+
+:deep(.el-dialog__footer) {
+  background: var(--color-background) !important;
+  border-top: 1px solid var(--color-background-soft);
+}
+
+/* Ensure submit button in dialog always has white text */
+:deep(.el-dialog__footer button[type="submit"]) {
+  color: white !important;
+}
+
+/* Tablet and larger: Use grid layout */
+@media (min-width: 768px) {
+  .manual-form {
+    grid-template-columns: 140px 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .form-row {
+    display: contents;
+  }
+
+  .form-row label {
+    text-align: right;
+    align-self: center;
+    padding-right: 0;
+    font-weight: 600;
+  }
+
+  .channel-list {
+    width: 100%;
+    min-width: 320px;
+  }
+
+  .image-list {
+    width: 100%;
+    min-width: 320px;
+  }
+}
+
+/* Desktop: wider form */
+@media (min-width: 1024px) {
+  .manual-form {
+    max-width: 600px;
+  }
 }
 </style>
