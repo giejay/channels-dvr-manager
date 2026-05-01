@@ -1,14 +1,18 @@
 version: '3.8'
 services:
   channels-dvr-manager:
-    build: .
+    build:
+      context: .
+      args:
+        # Build-time variables (baked into the JS bundle)
+        - VITE_STREAM_URL=${VITE_STREAM_URL}
+        - VITE_UNSPLASH_CLIENT_ID=${VITE_UNSPLASH_CLIENT_ID}
     image: channels-dvr-manager:latest
     ports:
       - "8081:80"
-#    environment:
-#      - API_PROXY_URL=https://your-backend-url.example.com
-#      - VITE_UNSPLASH_CLIENT_ID=your_unsplash_client_id
-    # Uncomment if you want to use a .env file for build args
+    # environment:
+    #   # Runtime variables (used by nginx)
+    #   - API_PROXY_URL=${API_PROXY_URL}
     env_file:
       - .env
     restart: unless-stopped
