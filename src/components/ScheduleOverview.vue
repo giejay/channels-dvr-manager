@@ -102,6 +102,11 @@
       <ElTabPane label="Guide" name="guide">
         <Guide />
       </ElTabPane>
+
+      <!-- Recordings Tab -->
+      <ElTabPane label="Recordings" name="recordings">
+        <RecordingsTab />
+      </ElTabPane>
     </ElTabs>
 
     <ElDialog
@@ -119,6 +124,7 @@
 import { ref, onMounted, defineExpose, computed } from 'vue'
 import ManualRecording from './ManualRecording.vue'
 import Guide from './Guide.vue'
+import RecordingsTab from './RecordingsTab.vue'
 import { ElTable, ElTableColumn, ElInput, ElButton, ElPopconfirm, ElMessage, ElDialog, ElTabs, ElTabPane } from 'element-plus'
 
 const jobs = ref([])
