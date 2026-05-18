@@ -43,7 +43,14 @@
             <div class="results-table-wrapper desktop-only">
               <ElTable :data="group.airings" stripe border>
                 <ElTableColumn prop="Title" label="Title" sortable min-width="150" show-overflow-tooltip />
-                <ElTableColumn prop="Channel" label="Channel" :formatter="formatChannel" min-width="100" />
+                 <ElTableColumn prop="Channel" label="Channel" min-width="120">
+                   <template #default="scope">
+                     <span style="display:flex;align-items:center;gap:0.5em;">
+                       <img v-if="getChannelLogo(scope.row.Channel)" :src="getChannelLogo(scope.row.Channel)" :alt="'Logo'" style="height:1.5em;width:auto;max-width:2.5em;object-fit:contain;vertical-align:middle;" />
+                       <span>{{ formatChannel(scope.row) }}</span>
+                     </span>
+                   </template>
+                 </ElTableColumn>
                 <ElTableColumn prop="Summary" label="Summary" show-overflow-tooltip min-width="200" />
                 <ElTableColumn prop="Time" label="Start" :formatter="row => formatDate(row.Time)" sortable min-width="150" />
                 <ElTableColumn prop="Duration" label="Duration" :formatter="row => formatDuration(row.Duration)" min-width="80" />
@@ -61,7 +68,10 @@
             <div class="results-cards-wrapper mobile-only">
               <div v-for="(airing, idx) in group.airings" :key="idx" class="airing-card">
                 <div class="airing-header">
-                  <div class="airing-title">{{ airing.Title }}</div>
+                  <div style="display:flex;align-items:center;gap:0.5rem;flex:1;">
+                    <img v-if="getChannelLogo(airing.Channel)" :src="getChannelLogo(airing.Channel)" :alt="'Logo'" style="height:1.5em;width:auto;max-width:2.5em;object-fit:contain;vertical-align:middle;" />
+                    <div class="airing-title">{{ airing.Title }}</div>
+                  </div>
                   <ElButton type="primary" size="small" @click="recordFromSearch(airing)">Record</ElButton>
                 </div>
                 <div class="airing-details">
@@ -98,7 +108,14 @@
         <!-- Desktop Table View -->
         <div class="table-wrapper desktop-only">
           <ElTable :data="liveSearchResults" stripe border>
-            <ElTableColumn prop="Channel" label="Channel" min-width="120" :formatter="formatChannelName" />
+            <ElTableColumn prop="Channel" label="Channel" min-width="140">
+              <template #default="scope">
+                <span style="display:flex;align-items:center;gap:0.5em;">
+                  <img v-if="getChannelLogo(scope.row.Channel)" :src="getChannelLogo(scope.row.Channel)" :alt="'Logo'" style="height:1.5em;width:auto;max-width:2.5em;object-fit:contain;vertical-align:middle;" />
+                  <span>{{ formatChannelName(scope.row) }}</span>
+                </span>
+              </template>
+            </ElTableColumn>
             <ElTableColumn prop="Title" label="Title" sortable min-width="200" show-overflow-tooltip />
             <ElTableColumn prop="Summary" label="Summary" min-width="250" show-overflow-tooltip />
             <ElTableColumn prop="StartTime" label="Start" min-width="150" :formatter="row => formatTime(row.StartTime)" />
@@ -114,12 +131,15 @@
         </div>
 
         <!-- Mobile Card View -->
-        <div class="cards-wrapper mobile-only">
-          <div class="card-list">
-            <div v-for="program in liveSearchResults" :key="program.Channel" class="program-card">
+        <div v-if="!loadingLive && !errorLive" class="cards-wrapper mobile-only">
+          <div v-if="filteredLivePrograms.length > 0" class="card-list">
+            <div v-for="program in filteredLivePrograms" :key="program.Channel" class="program-card">
               <div class="card-header">
                 <div class="channel-info">
-                  <div class="channel-name">{{ formatChannelName(program) }}</div>
+                  <span style="display:flex;align-items:center;gap:0.5em;">
+                    <img v-if="getChannelLogo(program.Channel)" :src="getChannelLogo(program.Channel)" :alt="'Logo'" style="height:1.5em;width:auto;max-width:2.5em;object-fit:contain;vertical-align:middle;" />
+                    <span class="channel-name">{{ formatChannelName(program) }}</span>
+                  </span>
                   <div class="program-title">{{ program.Title }}</div>
                 </div>
                 <ElButton type="primary" size="small" @click="viewStream(program)">
@@ -142,6 +162,9 @@
               </div>
             </div>
           </div>
+          <div v-else class="empty-state">
+            No programs currently airing
+          </div>
         </div>
       </div>
     </div>
@@ -159,7 +182,14 @@
       <!-- Desktop Table View -->
       <div v-if="!loadingLive && !errorLive" class="table-wrapper desktop-only">
         <ElTable :data="filteredLivePrograms" stripe border>
-          <ElTableColumn prop="Channel" label="Channel" min-width="120" :formatter="formatChannelName" />
+          <ElTableColumn prop="Channel" label="Channel" min-width="140">
+            <template #default="scope">
+              <span style="display:flex;align-items:center;gap:0.5em;">
+                <img v-if="getChannelLogo(scope.row.Channel)" :src="getChannelLogo(scope.row.Channel)" :alt="'Logo'" style="height:1.5em;width:auto;max-width:2.5em;object-fit:contain;vertical-align:middle;" />
+                <span>{{ formatChannelName(scope.row) }}</span>
+              </span>
+            </template>
+          </ElTableColumn>
           <ElTableColumn prop="Title" label="Title" sortable min-width="200" show-overflow-tooltip />
           <ElTableColumn prop="Summary" label="Summary" min-width="250" show-overflow-tooltip />
           <ElTableColumn prop="StartTime" label="Start" min-width="150" :formatter="row => formatTime(row.StartTime)" />
@@ -180,8 +210,11 @@
           <div v-for="program in filteredLivePrograms" :key="program.Channel" class="program-card">
             <div class="card-header">
               <div class="channel-info">
-                <div class="channel-name">{{ formatChannelName(program) }}</div>
-                    <div class="program-title">{{ program.Title }}</div>
+                <span style="display:flex;align-items:center;gap:0.5em;">
+                  <img v-if="getChannelLogo(program.Channel)" :src="getChannelLogo(program.Channel)" :alt="'Logo'" style="height:1.5em;width:auto;max-width:2.5em;object-fit:contain;vertical-align:middle;" />
+                  <span class="channel-name">{{ formatChannelName(program) }}</span>
+                </span>
+                <div class="program-title">{{ program.Title }}</div>
               </div>
               <ElButton type="primary" size="small" @click="viewStream(program)">
                 View
@@ -257,6 +290,29 @@
           <span class="dialog-label">Summary:</span>
           <span class="dialog-value">{{ recordDialogAiring.Summary }}</span>
         </div>
+        <div class="dialog-row">
+          <span class="dialog-label">Max Chunk Length:</span>
+          <span class="dialog-value">
+            <ElInput v-model.number="maxChunkHours" type="number" min="0" max="23" style="width:60px;display:inline-block;" /> h
+            <ElInput v-model.number="maxChunkMinutes" type="number" min="0" max="59" style="width:60px;display:inline-block;" /> m
+            <span style="color:#888;font-size:0.9em;">(default 2h, 0m)</span>
+          </span>
+        </div>
+        <div v-if="paddingMinutes !== null && paddingMinutes !== undefined" class="dialog-row">
+          <span class="dialog-label">Padding:</span>
+          <span class="dialog-value">
+            <ElInput v-model.number="paddingMinutes" type="number" min="0" max="120" style="width:60px;display:inline-block;margin-left:1em;" /> min padding
+            <span style="color:#888;font-size:0.9em;">(added to end, default 30m)</span>
+          </span>
+        </div>
+        <div v-if="splitSummary.length > 1" class="dialog-row">
+          <span class="dialog-label">Split Preview:</span>
+          <span class="dialog-value">
+            <ul style="margin:0;padding-left:1.2em;">
+              <li v-for="(seg, idx) in splitSummary" :key="idx">{{ seg }}</li>
+            </ul>
+          </span>
+        </div>
       </div>
       <template #footer>
         <span class="dialog-footer">
@@ -288,6 +344,9 @@ const searchResults = ref([])
 const hasSearched = ref(false)
 const showRecordDialog = ref(false)
 const recordDialogAiring = ref(null)
+const maxChunkHours = ref(2)
+const maxChunkMinutes = ref(0)
+const paddingMinutes = ref(30)
 
 // UI state
 const showSearchResults = ref(false)
@@ -329,6 +388,12 @@ function formatDuration(seconds) {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   return `${h}h ${m}m`
+}
+
+// Utility: Get channel logo by channel number
+function getChannelLogo(channelNumber) {
+  const ch = channels.value.find(c => String(c.GuideNumber) === String(channelNumber))
+  return ch && ch.Logo ? ch.Logo : null
 }
 
 // View stream
@@ -406,84 +471,6 @@ async function loadCurrentPrograms() {
   }
 }
 
-// Search functionality
-async function performSearch() {
-  if (!searchQuery.value.trim()) {
-    ElMessage.warning('Please enter a search query')
-    return
-  }
-
-  searching.value = true
-  searchError.value = ''
-  searchResults.value = []
-
-  try {
-    hasSearched.value = true
-    const now = Math.floor(Date.now() / 1000)
-    const sixHours = 6 * 60 * 60
-    const timeSlots = []
-
-    for (let i = 0; i < 16; i++) {
-      const time = now + (i * sixHours)
-      timeSlots.push(time)
-    }
-
-    const fetchPromises = timeSlots.map(time =>
-      fetch(`/api/devices/ANY/guide?time=${time}`)
-        .then(res => {
-          if (!res.ok) throw new Error(`Failed to fetch guide for time ${time}`)
-          return res.json()
-        })
-        .catch(e => {
-          console.warn(`Failed to fetch time slot:`, e.message)
-          return []
-        })
-    )
-
-    const allData = await Promise.all(fetchPromises)
-    const searchTerms = parseSearchTerms(searchQuery.value)
-    const results = []
-    const dedupeSet = new Set()
-
-    allData.forEach((data) => {
-      if (Array.isArray(data)) {
-        data.forEach((item) => {
-          if (item.Airings && Array.isArray(item.Airings)) {
-            item.Airings.forEach((airing) => {
-              const airingId = `${airing.Channel || item.Channel?.Number}-${airing.Time}-${airing.Title}`
-              if (dedupeSet.has(airingId)) return
-
-              const title = airing.Title || ''
-              const summary = airing.Summary || ''
-              const combined = `${title} ${summary}`
-
-              if (matchesAllTerms(combined, searchTerms)) {
-                dedupeSet.add(airingId)
-                results.push({
-                  ...airing,
-                  Channel: airing.Channel || item.Channel?.Number
-                })
-              }
-            })
-          }
-        })
-      }
-    })
-
-    results.sort((a, b) => a.Time - b.Time)
-    searchResults.value = results
-
-    if (results.length === 0) {
-      searchError.value = `No results found for "${searchQuery.value}"`
-    }
-  } catch (e) {
-    console.error('Search error:', e)
-    searchError.value = `Search failed: ${e.message}`
-  } finally {
-    searching.value = false
-  }
-}
-
 function parseSearchTerms(query) {
   return query
     .toLowerCase()
@@ -516,6 +503,9 @@ function formatDateHeader(dateStr) {
 
 function recordFromSearch(airing) {
   recordDialogAiring.value = airing
+  // Default chunk: 2 hours
+  maxChunkHours.value = 2
+  maxChunkMinutes.value = 0
   showRecordDialog.value = true
 }
 
@@ -523,43 +513,80 @@ async function confirmRecord() {
   if (!recordDialogAiring.value) return
 
   try {
-    const paddedDuration = recordDialogAiring.value.Duration + 3600
-
-    const payload = {
-      Name: recordDialogAiring.value.Title,
-      Time: recordDialogAiring.value.Time,
-      Duration: paddedDuration,
-      Channels: [recordDialogAiring.value.Channel],
-      Airing: {
-        Source: recordDialogAiring.value.Source || 'xmltv:IPTVBoss',
-        Channel: recordDialogAiring.value.Channel,
-        Time: recordDialogAiring.value.Time,
-        Duration: recordDialogAiring.value.Duration,
-        Title: recordDialogAiring.value.Title,
-        Summary: recordDialogAiring.value.Summary || '',
-        SeriesID: recordDialogAiring.value.SeriesID || recordDialogAiring.value.Title,
-        ProgramID: recordDialogAiring.value.ProgramID || recordDialogAiring.value.Title,
-        ContentRating: recordDialogAiring.value.ContentRating || '',
-        SearchScore: recordDialogAiring.value.SearchScore || 0,
-        Raw: recordDialogAiring.value.Raw || {}
+    const start = recordDialogAiring.value.Time
+    const duration = recordDialogAiring.value.Duration
+    const end = start + duration + paddingMinutes.value * 60
+    const chunkSeconds = (maxChunkHours.value * 3600) + (maxChunkMinutes.value * 60)
+    const jobs = []
+    let cur = start
+    let idx = 1
+    // If chunkSeconds is 0, treat as no split
+    const doSplit = chunkSeconds > 0 && duration > chunkSeconds
+    while (doSplit ? cur < end : idx === 1) {
+      let next = doSplit ? Math.min(cur + chunkSeconds, end) : end
+      const segTitle = doSplit ? `${recordDialogAiring.value.Title} (Part ${idx})` : recordDialogAiring.value.Title
+      const segDuration = next - cur
+      const payload = {
+        Name: segTitle,
+        Time: cur,
+        Duration: segDuration,
+        Channels: [recordDialogAiring.value.Channel],
+        Airing: {
+          Source: recordDialogAiring.value.Source || 'xmltv:IPTVBoss',
+          Channel: recordDialogAiring.value.Channel,
+          Time: cur,
+          Duration: segDuration,
+          Title: segTitle,
+          Summary: recordDialogAiring.value.Summary || '',
+          SeriesID: recordDialogAiring.value.SeriesID || recordDialogAiring.value.Title,
+          ProgramID: recordDialogAiring.value.ProgramID || recordDialogAiring.value.Title,
+          ContentRating: recordDialogAiring.value.ContentRating || '',
+          SearchScore: recordDialogAiring.value.SearchScore || 0,
+          Raw: recordDialogAiring.value.Raw || {}
+        }
       }
+      jobs.push(payload)
+      cur = next
+      idx++
     }
-
-    const res = await fetch('/api/dvr/jobs/new', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-
-    if (!res.ok) throw new Error('Failed to create recording')
-
-    ElMessage.success('Recording created!')
+    for (const job of jobs) {
+      const res = await fetch('/api/dvr/jobs/new', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(job)
+      })
+      if (!res.ok) throw new Error('Failed to create recording')
+    }
+    ElMessage.success(jobs.length > 1 ? `Created ${jobs.length} split recordings!` : 'Recording created!')
     showRecordDialog.value = false
     recordDialogAiring.value = null
   } catch (e) {
     ElMessage.error(`Failed to create recording: ${e.message}`)
   }
 }
+// Compute split summary for dialog preview
+const splitSummary = computed(() => {
+  if (!recordDialogAiring.value) return []
+  const start = recordDialogAiring.value.Time
+  const duration = recordDialogAiring.value.Duration
+  const end = start + duration + paddingMinutes.value * 60
+  const chunkSeconds = (maxChunkHours.value * 3600) + (maxChunkMinutes.value * 60)
+  if (!chunkSeconds || duration <= chunkSeconds) {
+    return [
+      `${formatDate(start)} - ${formatDate(end)} (${formatDuration(duration)})`
+    ]
+  }
+  let cur = start
+  let idx = 1
+  const out = []
+  while (cur < end) {
+    let next = Math.min(cur + chunkSeconds, end)
+    out.push(`${formatDate(cur)} - ${formatDate(next)} (${formatDuration(next - cur)})`)
+    cur = next
+    idx++
+  }
+  return out
+})
 
 // Perform live search - filter current programs
 function performLiveSearch() {
@@ -1145,4 +1172,3 @@ loadCurrentPrograms()
   }
 }
 </style>
-

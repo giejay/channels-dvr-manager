@@ -45,7 +45,14 @@
             >
               <ElTableColumn type="selection" width="50" />
               <ElTableColumn prop="Name" label="Title" sortable min-width="150" />
-              <ElTableColumn prop="Channels" label="Channels" :formatter="formatChannels" min-width="120" />
+              <ElTableColumn prop="Channels" label="Channels" min-width="160">
+                <template #default="scope">
+                  <span v-for="id in scope.row.Channels" :key="id" style="display:inline-flex;align-items:center;gap:0.5em;margin-right:1em;">
+                    <img v-if="getChannelLogo(id)" :src="getChannelLogo(id)" :alt="'Logo'" style="height:1.5em;width:auto;max-width:2.5em;object-fit:contain;vertical-align:middle;" />
+                    <span>{{ formatChannels({ Channels: [id] }) }}</span>
+                  </span>
+                </template>
+              </ElTableColumn>
               <ElTableColumn prop="Time" label="Start" :formatter="row => formatDate(row.Time)" sortable min-width="160" />
               <ElTableColumn prop="Duration" label="Duration" :formatter="row => formatDuration(row.Duration)" sortable min-width="100" />
               <ElTableColumn label="Actions" width="140" fixed="right">
@@ -75,7 +82,12 @@
                 <div class="card-body">
                   <div class="card-row">
                     <span class="card-label">Channels:</span>
-                    <span class="card-value">{{ formatChannels(job) }}</span>
+                    <span class="card-value">
+                      <span v-for="id in job.Channels" :key="id" style="display:inline-flex;align-items:center;gap:0.5em;margin-right:1em;">
+                        <img v-if="getChannelLogo(id)" :src="getChannelLogo(id)" :alt="'Logo'" style="height:1.5em;width:auto;max-width:2.5em;object-fit:contain;vertical-align:middle;" />
+                        <span>{{ formatChannels({ Channels: [id] }) }}</span>
+                      </span>
+                    </span>
                   </div>
                   <div class="card-row">
                     <span class="card-label">Start:</span>
@@ -145,6 +157,12 @@ function formatDuration(seconds) {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   return `${h}h ${m}m`
+}
+
+// Utility: Get channel logo by channel number or ID
+function getChannelLogo(channelNumberOrId) {
+  const ch = channels.value.find(c => String(c.GuideNumber) === String(channelNumberOrId) || String(c.ID) === String(channelNumberOrId))
+  return ch && ch.Logo ? ch.Logo : null
 }
 
 async function loadJobs() {

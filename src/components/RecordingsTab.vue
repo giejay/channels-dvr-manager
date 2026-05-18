@@ -12,7 +12,14 @@
           <ElTableColumn prop="Title" label="Title" min-width="320" show-overflow-tooltip />
           <ElTableColumn prop="Duration" label="Duration" :formatter="row => formatDuration(row.Duration)" min-width="70" max-width="90" />
           <ElTableColumn prop="StartTime" label="Start" :formatter="row => formatDate(row.StartTime)" min-width="110" max-width="140" />
-          <ElTableColumn prop="ChannelName" label="Channel" min-width="140" />
+          <ElTableColumn prop="ChannelName" label="Channel" min-width="160">
+            <template #default="scope">
+              <span style="display:flex;align-items:center;gap:0.5em;">
+                <img v-if="getChannelLogo(scope.row.Airing.Channel)" :src="getChannelLogo(scope.row.Airing.Channel)" :alt="'Logo'" style="height:1.5em;width:auto;max-width:2.5em;object-fit:contain;vertical-align:middle;" />
+                <span>{{ scope.row.ChannelName }}</span>
+              </span>
+            </template>
+          </ElTableColumn>
           <ElTableColumn label="Actions" width="180" fixed="right">
             <template #default="scope">
               <ElButton type="primary" size="small" @click="viewStream(scope.row, 'vite')">VLC</ElButton>
@@ -32,7 +39,10 @@
             <div class="card-body">
               <div class="card-row"><span class="card-label">Duration:</span> <span class="card-value">{{ formatDuration(rec.Duration) }}</span></div>
               <div class="card-row"><span class="card-label">Start:</span> <span class="card-value">{{ formatDate(rec.StartTime) }}</span></div>
-              <div class="card-row"><span class="card-label">Channel:</span> <span class="card-value">{{ rec.ChannelName }}</span></div>
+              <div class="card-row"><span class="card-label">Channel:</span> <span class="card-value" style="display:flex;align-items:center;gap:0.5em;">
+                <img v-if="getChannelLogo(rec.Airing.Channel)" :src="getChannelLogo(rec.Airing.Channel)" :alt="'Logo'" style="height:1.5em;width:auto;max-width:2.5em;object-fit:contain;vertical-align:middle;" />
+                <span>{{ rec.ChannelName }}</span>
+              </span></div>
             </div>
           </div>
         </div>
@@ -82,6 +92,11 @@ function formatDuration(seconds) {
 function getChannelName(channelId) {
   const ch = channels.value.find(c => c.ID == channelId || c.GuideNumber == channelId)
   return ch ? `${ch.GuideNumber} - ${ch.GuideName}` : channelId
+}
+// Utility: Get channel logo by channel number or ID
+function getChannelLogo(channelNumberOrId) {
+  const ch = channels.value.find(c => String(c.GuideNumber) === String(channelNumberOrId) || String(c.ID) === String(channelNumberOrId))
+  return ch && ch.Logo ? ch.Logo : null
 }
 
 function setupMpegtsPlayer(url) {
