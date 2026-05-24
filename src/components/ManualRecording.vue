@@ -196,26 +196,12 @@ const segmentSummaries = computed(() => {
     let segStart = Math.floor(startEpoch / 1000) + d * 24 * 3600
     let segEnd = Math.floor(endEpoch / 1000) + d * 24 * 3600
     if (!maxDur || maxDur >= (segEnd - segStart)) {
-      // One job for the whole range (padded)
-      const segTitle = `${title.value} (${pad(new Date(segStart * 1000).getHours())}:${pad(new Date(segStart * 1000).getMinutes())}-${pad(new Date(segEnd * 1000).getHours())}:${pad(new Date(segEnd * 1000).getMinutes())})`
-      for (const ch of selectedChannels.value) {
-        jobs.push({
-          Name: segTitle,
-          Time: segStart,
-          Duration: segEnd - segStart,
-          Channels: [ch.GuideNumber],
-          Airing: {
-            Source: 'manual',
-            Channel: ch.GuideNumber,
-            Time: segStart,
-            Duration: segEnd - segStart,
-            Title: segTitle,
-            Summary: summary.value,
-            SeriesID: `manual/${ch.GuideNumber}`,
-            Image: selectedImage.value || undefined
-          }
-        })
-      }
+      // One job for the whole range (no split)
+      arr.push({
+        start: new Date(segStart * 1000),
+        end: new Date(segEnd * 1000),
+        duration: `${Math.floor((segEnd - segStart) / 3600)}h ${Math.floor(((segEnd - segStart) % 3600) / 60)}m`
+      })
     } else {
       let cur = segStart
       while (cur < segEnd) {
