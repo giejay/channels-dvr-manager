@@ -20,6 +20,32 @@
        </div>
     </div>
 
+    <!-- Search Input -->
+    <div class="search-bar">
+      <input
+        v-model="searchQuery"
+        type="text"
+        placeholder="Search scheduled recordings by title..."
+        class="search-input"
+      />
+      <ElButton
+        v-if="searchQuery"
+        type="text"
+        @click="clearSearch"
+        style="padding: 0 0.5rem;"
+      >
+        Clear
+      </ElButton>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="filter-controls-schedule">
+      <label>
+        <input type="checkbox" v-model="showManualOnly" />
+        Manual Only
+      </label>
+    </div>
+
     <ElTabs v-model="activeTab" class="tabs-responsive">
       <!-- Schedule Tab -->
       <ElTabPane label="Scheduled Recordings" name="schedule">
@@ -148,6 +174,8 @@ const showManualDialog = ref(false)
 const isDark = ref(false)
 const selectedJobs = ref([])
 const activeTab = ref('schedule')
+const searchQuery = ref('')
+const showManualOnly = ref(false)
 
 function formatDate(epoch) {
   const d = new Date(epoch * 1000)
@@ -214,12 +242,29 @@ async function deleteSelectedJobs() {
 }
 
 const filteredJobs = computed(() => {
-  if (!filter.value) return jobs.value
-  return jobs.value.filter(job =>
-    job.Name.toLowerCase().includes(filter.value.toLowerCase()) ||
-    job.Channels.join(',').includes(filter.value)
-  )
+  let result = jobs.value
+
+  // Apply manual only filter
+  if (showManualOnly.value) {
+    result = result.filter(job => job.Name && job.Name.toLowerCase().includes('manual'))
+  }
+
+  // Apply search filter
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase()
+    result = result.filter(job =>
+      job.Name.toLowerCase().includes(query) ||
+      (job.Channels && job.Channels.join(',').toLowerCase().includes(query)) ||
+      formatChannels({ Channels: job.Channels }).toLowerCase().includes(query)
+    )
+  }
+
+  return result
 })
+
+function clearSearch() {
+  searchQuery.value = ''
+}
 
 onMounted(() => {
   // Load mode from localStorage if present
@@ -309,6 +354,57 @@ function formatChannels(row) {
   color: var(--color-text) !important;
 }
 
+.search-bar {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.search-input {
+  flex: 1;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--color-background-soft);
+  background: var(--color-background-mute);
+  color: var(--color-text);
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
+}
+
+.search-input::placeholder {
+  color: var(--color-text-secondary, #999);
+}
+
+.filter-controls-schedule {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.filter-controls-schedule label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  color: var(--color-text);
+  font-weight: normal;
+  margin: 0;
+  user-select: none;
+}
+
+.filter-controls-schedule input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
 
 /* Desktop View */
 @media (min-width: 768px) {
