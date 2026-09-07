@@ -15,6 +15,7 @@ services:
       CHANNELS_DVR_URL: ${CHANNELS_DVR_URL:-http://www.channels.local}
       CHANNELS_DVR_CRON: ${CHANNELS_DVR_CRON:-0 3 * * *}
       CHANNELS_DVR_RUN_IMMEDIATELY: ${CHANNELS_DVR_RUN_IMMEDIATELY:-true}
+      DVR_LOG_FILE: ${DVR_LOG_FILE:-/var/log/dvr-scheduler.log}
       TZ: ${TZ:-UTC}
     env_file:
       - .env

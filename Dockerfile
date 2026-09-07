@@ -33,6 +33,7 @@ ENV CHANNELS_DVR_URL="http://www.channels.local"
 ENV CHANNELS_DVR_CRON="0 3 * * *"
 ENV CHANNELS_DVR_RUN_IMMEDIATELY="true"
 ENV CHANNELS_DVR_RUN_SCHEDULER="true"
+ENV DVR_LOG_FILE="/var/log/dvr-scheduler.log"
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

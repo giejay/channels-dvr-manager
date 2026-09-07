@@ -9,8 +9,11 @@ fi
 envsubst '$API_PROXY_URL' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf
 
 if [ "${CHANNELS_DVR_RUN_SCHEDULER:-true}" != "false" ]; then
-  echo "Starting DVR scheduler..."
-  nohup node /usr/share/nginx/html/scripts/dvr-scheduler.mjs > /var/log/dvr-scheduler.log 2>&1 &
+  DVR_LOG_FILE="${DVR_LOG_FILE:-/var/log/dvr-scheduler.log}"
+  mkdir -p "$(dirname "$DVR_LOG_FILE")"
+  : > "$DVR_LOG_FILE"
+  echo "Starting DVR scheduler... log file: $DVR_LOG_FILE"
+  nohup sh -c 'DVR_LOG_FILE="$1" node /usr/share/nginx/html/scripts/dvr-scheduler.mjs 2>&1 | tee "$1"' sh "$DVR_LOG_FILE" &
 fi
 
 exec "$@"

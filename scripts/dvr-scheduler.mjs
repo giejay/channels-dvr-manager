@@ -1,5 +1,17 @@
 #!/usr/bin/env node
+import fs from 'node:fs';
 import cron from 'node-cron';
+
+const logFile = process.env.DVR_LOG_FILE || '/var/log/dvr-scheduler.log';
+
+function resetLogFile() {
+  try {
+    fs.mkdirSync('/var/log', { recursive: true });
+    fs.writeFileSync(logFile, '');
+  } catch (error) {
+    console.error(`[dvr-scheduler] failed to reset log file ${logFile}`, error);
+  }
+}
 
 const log = (message, details) => {
   const timestamp = new Date().toISOString();
@@ -179,6 +191,7 @@ async function addMatchedRecording(rule, airing, existingJobs) {
 }
 
 async function scanRules() {
+  resetLogFile();
   log(`starting DVR rule scan for ${baseUrl}`);
 
   const rules = await fetchRules();
