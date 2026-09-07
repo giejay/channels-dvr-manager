@@ -25,14 +25,35 @@ Use at your own risk and feel free to review, refactor, or improve the code as n
 ## How to Run
 
 1. Set the `API_PROXY_URL` environment variable in your `.env` file or directly in your `docker-compose.yml` to match your Channels DVR instance (e.g., `http://192.168.2.118:8089`).
-2. (Optional) Set `VITE_UNSPLASH_CLIENT_ID` if you want to enable image search.
-3. Start the app using Docker Compose:
+2. Optional: set `CHANNELS_DVR_URL` if your DVR is not at `http://www.channels.local` and adjust `CHANNELS_DVR_CRON` for the background matching schedule.
+3. (Optional) Set `VITE_UNSPLASH_CLIENT_ID` if you want to enable image search.
+4. Start the app using Docker Compose:
 
 ```sh
 docker compose up -d
 ```
 
 The app will be available at [http://localhost:8080](http://localhost:8080) by default.
+
+### Background DVR Rule Scheduler
+
+This image now includes a Node-based scheduler that scans every enabled rule against the Channels DVR test endpoint (`/dvr/rules/test`) and creates recordings for any matching guide programs. This avoids the UI's "smart" scheduling logic and uses the same match-checking endpoint that the app uses to determine matches.
+
+The scheduler runs in the same container as the web UI and is controlled by these environment variables:
+
+- `CHANNELS_DVR_URL` - Base URL for the Channels DVR server (default: `http://www.channels.local`)
+- `CHANNELS_DVR_CRON` - Cron expression for the background scan (default: `0 3 * * *`)
+- `CHANNELS_DVR_RUN_IMMEDIATELY` - Run one scan as soon as the container starts (default: `true`)
+- `CHANNELS_DVR_TIMEOUT_MS` - HTTP timeout for each request (default: `30000`)
+
+Example:
+
+```yaml
+environment:
+  API_PROXY_URL: http://192.168.2.118:8089
+  CHANNELS_DVR_URL: http://www.channels.local
+  CHANNELS_DVR_CRON: '0 3 * * *'
+``` 
 
 ### Environment Variables
 
